@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quiz Blitz — Multiple Choice Game</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1: #0f172a;
+      --card: #0b1220;
+      --accent: #7c3aed; /* violet */
+      --accent-2: #06b6d4; /* teal */
+      --muted: #94a3b8;
+      --glass: rgba(255,255,255,0.04);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg, #071029 0%, #09223a 50%, #06121e 100%);
+      color:#e6eef8;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .app {
+      width:100%;
+      max-width:980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.7);
+      display:grid;
+      grid-template-columns: 1fr 340px;
+      min-height:520px;
+    }
+
+    /* Left (game) */
+    .left {
+      padding:24px;
+    }
+
+    header.app-head {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .brand {
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo {
+      width:56px;height:56px;border-radius:12px;
+      background: linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;font-weight:700;
+      box-shadow:0 6px 18px rgba(124,58,237,0.18);
+      font-size:20px;
+    }
+    .brand h1 { font-size:18px; margin:0; letter-spacing:0.2px; }
+    .brand p { margin:0; color:var(--muted); font-size:12px }
+
+    .meta { text-align:right; color:var(--muted); font-size:13px; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;
+      padding:18px;
+      margin-bottom:14px;
+      border: 1px solid var(--glass);
+    }
+
+    .question {
+      font-size:20px;
+      font-weight:600;
+      line-height:1.3;
+      margin-bottom:12px;
+    }
+
+    .progress-wrap {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .progress {
+      flex:1;
+      height:10px;
+      background:rgba(255,255,255,0.04);
+      border-radius:999px;
+      overflow:hidden;
+      position:relative;
+    }
+    .progress > i {
+      position:absolute; left:0; top:0; bottom:0; width:0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition:width 400ms cubic-bezier(.2,.9,.3,1);
+    }
+    .ptext { font-size:13px; color:var(--muted); min-width:70px; text-align:right; }
+
+    .options { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .option {
+      padding:12px 14px;
+      border-radius:10px;
+      background: rgba(255,255,255,0.02);
+      border:1px solid rgba(255,255,255,0.03);
+      cursor:pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms;
+      display:flex;align-items:center;gap:10px;
+      font-size:14px;
+      user-select:none;
+    }
+    .option:hover { transform: translateY(-4px); box-shadow:0 8px 26px rgba(2,6,23,0.45); }
+    .option.disabled { opacity:0.55; cursor:not-allowed; transform:none; box-shadow:none; }
+    .option.correct { background: linear-gradient(90deg, rgba(34,197,94,0.12), rgba(34,197,94,0.06)); border-color: rgba(34,197,94,0.25); box-shadow:0 10px 30px rgba(16,185,129,0.06); }
+    .option.wrong { background: linear-gradient(90deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)); border-color: rgba(239,68,68,0.18); }
+
+    .opt-index { width:36px; height:36px; border-radius:8px; display:inline-grid; place-items:center; font-weight:700; color:#0b1220; background:white; flex-shrink:0; }
+    .opt-text { flex:1; }
+
+    .controls { display:flex; gap:10px; margin-top:14px; align-items:center; }
+    .btn {
+      padding:10px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:600;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white;
+      box-shadow:0 8px 20px rgba(124,58,237,0.16);
+    }
+    .btn.secondary {
+      background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04);
+      box-shadow:none;font-weight:600;
+    }
+    .lifeline { background:linear-gradient(90deg,#ffb86b,#ff7aa2); color:#081026; font-weight:700; padding:8px 10px;border-radius:10px;border:none; cursor:pointer; }
+
+    .timer {
+      margin-left:auto;
+      min-width:62px;
+      padding:8px 10px;
+      background:rgba(255,255,255,0.02);
+      border-radius:10px;
+      text-align:center;
+      font-weight:700;color:var(--muted);
+    }
+    .timer.urgent { color:#ffb86b; transform:scale(1.05); }
+
+    /* Right column (sidebar) */
+    .right {
+      padding:20px;
+      border-left:1px solid rgba(255,255,255,0.02);
+      background: linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.006));
+    }
+    .score {
+      font-size:28px;
+      font-weight:700;
+      color:var(--accent-2);
+      margin-bottom:6px;
+    }
+    .small { color:var(--muted); font-size:13px; margin-bottom:12px; }
+
+    .stat {
+      display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:10px;margin-bottom:10px;background:rgba(255,255,255,0.02);
+    }
+
+    .footer-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+
+    /* Result panel */
+    .result {
+      padding:20px;
+    }
+    .result h2 { margin:0 0 8px 0; font-size:20px; }
+    .result p { color:var(--muted); margin:0 0 14px; }
+
+    /* Confetti (simple CSS dots) */
+    .confetti { pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:30; }
+    .confetti span {
+      position:absolute; width:10px;height:10px;border-radius:50%;
+      animation:fall 1400ms linear infinite;
+      opacity:0.95;
+    }
+    @keyframes fall {
+      0%{ transform: translateY(-20vh) rotate(0) }
+      100%{ transform: translateY(120vh) rotate(720deg); opacity:0.95 }
+    }
+
+    /* Responsive */
+    @media (max-width:900px){
+      .app{ grid-template-columns: 1fr; }
+      .right{ border-left:0; border-top:1px solid rgba(255,255,255,0.02); }
+    }
+
+    /* small helper */
+    .muted{ color:var(--muted); font-size:13px }
+    .center{ display:flex; align-items:center; justify-content:center; gap:8px }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Quiz Blitz Game">
+    <div class="left">
+      <header class="app-head">
+        <div class="brand">
+          <div class="logo">QB</div>
+          <div>
+            <h1>Quiz Comer</h1>
+            <p class="muted">Fast • Fun • Shareable</p>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="muted">Questions: <span id="totalQs">0</span></div>
+          <div class="muted">Highscore: <span id="highScore">0</span></div>
+        </div>
+      </header>
+
+      <section class="card" aria-live="polite">
+        <div class="progress-wrap">
+          <div class="progress" aria-hidden="true">
+            <i id="progressBar"></i>
+          </div>
+          <div class="ptext" id="qIndex">0 / 0</div>
+        </div>
+
+        <div class="question" id="question">Loading...</div>
+
+        <div class="options" id="options" role="list">
+          <!-- options injected here -->
+        </div>
+
+        <div class="controls">
+          <button class="lifeline" id="lifelineBtn" title="50-50 lifeline (removes two wrong options)">50-50</button>
+          <button class="btn secondary" id="skipBtn" title="Skip question (no score)">Skip</button>
+
+          <div class="timer" id="timer">--</div>
+
+          <button class="btn" id="nextBtn" style="margin-left:8px">Next →</button>
+        </div>
+      </section>
+
+      <section class="card" id="reviewCard" style="display:none; margin-top:12px;">
+        <div id="reviewTitle"><strong>Review:</strong> Correct answers will show after each question.</div>
+        <div id="reviewList" style="margin-top:10px; max-height:170px; overflow:auto"></div>
+      </section>
+    </div>
+
+    <aside class="right">
+      <div class="card">
+        <div class="score" id="score">0</div>
+        <div class="small">Your score</div>
+
+        <div class="stat">
+          <div>
+            <div class="muted">Answered</div>
+            <div id="answeredCnt">0</div>
+          </div>
+          <div>
+            <div class="muted">Correct</div>
+            <div id="correctCnt">0</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div>
+            <div class="muted">Time per Q</div>
+            <div id="timePerQ">15s</div>
+          </div>
+          <div>
+            <div class="muted">Difficulty</div>
+            <div id="difficulty">Normal</div>
+          </div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn" id="restartBtn">Restart</button>
+          <button class="btn secondary" id="shareBtn">Share</button>
+          <button class="btn secondary" id="downloadBtn">Download Results</button>
+        </div>
+      </div>
+
+      <div class="card result" id="resultPanel" style="display:none; margin-top:14px;">
+        <h2 id="resultTitle">You finished!</h2>
+        <p id="resultSub">Great job — here's your breakdown.</p>
+
+        <div id="resultStats"></div>
+        <div style="margin-top:12px" class="center">
+          <button class="btn" id="playAgain">Play again</button>
+          <button class="btn secondary" id="viewAnswers">View Answers</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- confetti container -->
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+  </div>
+
+<script>
+/* ======================
+   Competition-ready Quiz
+   Features:
+   - question shuffle, option shuffle
+   - per-question timer, urgency indicator
+   - 50-50 lifeline, skip
+   - score & highscore (localStorage)
+   - keyboard shortcuts: 1-4 to pick, Enter for next
+   - review panel & download results (JSON)
+   ====================== */
+
+(() => {
+  // CONFIG
+  const CONFIG = {
+    timePerQuestion: 15,     // seconds
+    pointsPerQ: 10,
+    questionsToAsk: 8,       // how many random questions per run
+  };
+
+  // QUESTION POOL (customize as needed)
+  const QUESTION_POOL = [
+    {
+      q: "Which language runs in a web browser?",
+      opts: ["Java", "C++", "JavaScript", "Python"],
+      ans: 2
+    },
+    {
+      q: "What does CSS stand for?",
+      opts: ["Cascading Style Sheets", "Computer Style System", "Creative Styling Syntax", "Control Style Scripts"],
+      ans: 0
+    },
+    {
+      q: "Which HTML tag is used for the largest heading?",
+      opts: ["<heading>", "<h6>", "<h1>", "<title>"],
+      ans: 2
+    },
+    {
+      q: "Which planet is known as the Red Planet?",
+      opts: ["Earth","Mars","Jupiter","Venus"],
+      ans: 1
+    },
+    {
+      q: "Who wrote 'To Kill a Mockingbird'?",
+      opts: ["Harper Lee","Jane Austen","Mark Twain","Virginia Woolf"],
+      ans: 0
+    },
+    {
+      q: "What does HTTP stand for?",
+      opts: ["HyperText Transfer Protocol","Hyperlink Text Transfer Protocol","Hyper Transfer Text Protocol","High Transfer Text Protocol"],
+      ans: 0
+    },
+    {
+      q: "Which is the smallest prime number?",
+      opts: ["0","1","2","3"],
+      ans: 2
+    },
+    {
+      q: "Which element has the chemical symbol 'O'?",
+      opts: ["Gold","Oxygen","Osmium","Silver"],
+      ans: 1
+    },
+    {
+      q: "What year did the first man land on the moon (Apollo 11)?",
+      opts: ["1965","1969","1971","1959"],
+      ans: 1
+    },
+    {
+      q: "CSS property to center text horizontally?",
+      opts: ["align:center","text-align:center","center-text:true","justify:center"],
+      ans: 1
+    }
+  ];
+
+  // State
+  let state = {
+    questions: [],
+    current: 0,
+    score: 0,
+    answered: 0,
+    correct: 0,
+    lifelineUsed: false,
+    timer: null,
+    timeLeft: CONFIG.timePerQuestion,
+    review: [], // {q, opts, chosenIndex, correctIndex}
+  };
+
+  // Elements
+  const el = id => document.getElementById(id);
+  const questionEl = el('question');
+  const optionsEl = el('options');
+  const progressBar = el('progressBar');
+  const qIndex = el('qIndex');
+  const scoreEl = el('score');
+  const answeredCnt = el('answeredCnt');
+  const correctCnt = el('correctCnt');
+  const totalQs = el('totalQs');
+  const highScoreEl = el('highScore');
+  const timerEl = el('timer');
+  const lifelineBtn = el('lifelineBtn');
+  const nextBtn = el('nextBtn');
+  const skipBtn = el('skipBtn');
+  const restartBtn = el('restartBtn');
+  const resultPanel = el('resultPanel');
+  const resultTitle = el('resultTitle');
+  const resultStats = el('resultStats');
+  const playAgain = el('playAgain');
+  const reviewCard = el('reviewCard');
+  const reviewList = el('reviewList');
+  const confetti = el('confetti');
+  const totalQuestionsDisplay = el('totalQs');
+
+  // Helpers
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function loadHighScore(){
+    const hs = parseInt(localStorage.getItem('qb_highscore') || '0',10);
+    highScoreEl.textContent = hs;
+    return hs;
+  }
+  loadHighScore();
+
+  // initialize game
+  function init(){
+    // Reset
+    state = {...state, score:0, current:0, answered:0, correct:0, lifelineUsed:false, review:[]};
+    el('score').textContent = '0';
+    el('answeredCnt').textContent = '0';
+    el('correctCnt').textContent = '0';
+    el('timePerQ').textContent = CONFIG.timePerQuestion + 's';
+    el('difficulty').textContent = 'Normal';
+    el('totalQs').textContent = CONFIG.questionsToAsk;
+
+    // Build questions: shuffle pool and pick first N, then shuffle options for each
+    const pool = JSON.parse(JSON.stringify(QUESTION_POOL));
+    shuffle(pool);
+    const selected = pool.slice(0, Math.min(CONFIG.questionsToAsk, pool.length));
+    // For each, shuffle options but keep track of new answer index
+    state.questions = selected.map(q => {
+      const indices = q.opts.map((_,i)=>i);
+      shuffle(indices);
+      const newOpts = indices.map(i => q.opts[i]);
+      const newAns = indices.indexOf(q.ans);
+      return { q: q.q, opts: newOpts, ans: newAns };
+    });
+
+    totalQuestionsDisplay.textContent = state.questions.length;
+    renderQuestion();
+  }
+
+  // Render current question
+  function renderQuestion(){
+    clearTimer();
+    const idx = state.current;
+    const total = state.questions.length;
+    if(idx >= total){
+      finishQuiz();
+      return;
+    }
+    const qq = state.questions[idx];
+    // update UI
+    questionEl.innerHTML = (idx+1) + ". " + qq.q;
+    optionsEl.innerHTML = '';
+    // options order A,B,C,D
+    qq.opts.forEach((text, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'option';
+      btn.setAttribute('data-index', i);
+      btn.setAttribute('role','button');
+      btn.setAttribute('tabindex','0');
+      btn.innerHTML = `<div class="opt-index">${String.fromCharCode(65+i)}</div><div class="opt-text">${text}</div>`;
+      btn.addEventListener('click', () => chooseOption(i));
+      optionsEl.appendChild(btn);
+    });
+
+    // progress & meta
+    const perc = Math.round((idx/total)*100);
+    progressBar.style.width = perc + '%';
+    qIndex.textContent = `${idx+1} / ${total}`;
+
+    // timer start
+    state.timeLeft = CONFIG.timePerQuestion;
+    startTimer();
+
+    // reset lifeline button if used
+    lifelineBtn.disabled = state.lifelineUsed;
+    lifelineBtn.style.opacity = state.lifelineUsed ? 0.6 : 1;
+
+    // focus first option for keyboard
+    setTimeout(()=> {
+      const firstOpt = optionsEl.querySelector('.option');
+      if(firstOpt) firstOpt.focus();
+    }, 120);
+  }
+
+  // Timer
+  function startTimer(){
+    updateTimerUI();
+    state.timer = setInterval(() => {
+      state.timeLeft--;
+      updateTimerUI();
+      if(state.timeLeft <= 0){
+        clearTimer();
+        // treat as skipped (no score), move to next
+        handleTimeout();
+      }
+    }, 1000);
+  }
+  function clearTimer(){
+    if(state.timer){ clearInterval(state.timer); state.timer = null; }
+  }
+  function updateTimerUI(){
+    timerEl.textContent = state.timeLeft + 's';
+    if(state.timeLeft <= 4) timerEl.classList.add('urgent'); else timerEl.classList.remove('urgent');
+  }
+
+  // When time runs out
+  function handleTimeout(){
+    // Mark no answer - record review
+    const qq = state.questions[state.current];
+    state.review.push({ q: qq.q, opts: qq.opts, chosen: null, correct: qq.ans });
+    state.answered++;
+    answeredCnt.textContent = state.answered;
+    // show correct highlight then next
+    revealCorrectThenNext();
+  }
+
+  // Choose an option
+  function chooseOption(i){
+    // if already answered or options disabled
+    const options = optionsEl.querySelectorAll('.option');
+    if(!options.length) return;
+    const clicked = optionsEl.querySelector(`.option[data-index="${i}"]`);
+    if(!clicked || clicked.classList.contains('disabled')) return;
+
+    clearTimer();
+    // disable further clicks
+    options.forEach(o=>o.classList.add('disabled'));
+
+    const qq = state.questions[state.current];
+    const correctIndex = qq.ans;
+
+    // record
+    state.answered++;
+    answeredCnt.textContent = state.answered;
+
+    if(i === correctIndex){
+      // correct
+      clicked.classList.add('correct');
+      state.score += CONFIG.pointsPerQ;
+      state.correct++;
+      correctCnt.textContent = state.correct;
+      scoreEl.textContent = state.score;
+    } else {
+      clicked.classList.add('wrong');
+      // highlight correct
+      const correctEl = optionsEl.querySelector(`.option[data-index="${correctIndex}"]`);
+      if(correctEl) correctEl.classList.add('correct');
+    }
+
+    // push to review
+    state.review.push({ q: qq.q, opts: qq.opts, chosen: i, correct: correctIndex });
+
+    // disable lifeline (already used state persists across)
+    lifelineBtn.disabled = true;
+
+    // show small animation then enable next
+    setTimeout(()=> progressBar.style.width = Math.round(((state.current+1)/state.questions.length)*100) + '%', 120);
+  }
+
+  // reveal correct then go to next automatically after a delay
+  function revealCorrectThenNext(){
+    // highlight correct
+    const qq = state.questions[state.current];
+    const correctIndex = qq.ans;
+    const correctEl = optionsEl.querySelector(`.option[data-index="${correctIndex}"]`);
+    if(correctEl) correctEl.classList.add('correct');
+    // move on
+    setTimeout(()=> {
+      state.current++;
+      renderQuestion();
+    }, 1100);
+  }
+
+  // Next button
+  nextBtn.addEventListener('click', () => {
+    // If user hasn't answered yet, treat as skip
+    const answeredThis = state.review.length > 0 && state.review[state.review.length-1].q === state.questions[state.current].q;
+    if(!answeredThis){
+      // skip - no points
+      state.review.push({ q: state.questions[state.current].q, opts: state.questions[state.current].opts, chosen: null, correct: state.questions[state.current].ans });
+      state.answered++;
+      answeredCnt.textContent = state.answered;
+    }
+    state.current++;
+    renderQuestion();
+  });
+
+  // Skip button
+  skipBtn.addEventListener('click', () => {
+    // treat as next but record as skipped
+    state.review.push({ q: state.questions[state.current].q, opts: state.questions[state.current].opts, chosen: null, correct: state.questions[state.current].ans });
+    state.answered++;
+    answeredCnt.textContent = state.answered;
+    state.current++;
+    renderQuestion();
+  });
+
+  // Lifeline: remove two wrong options
+  lifelineBtn.addEventListener('click', () => {
+    if(state.lifelineUsed) return;
+    const qq = state.questions[state.current];
+    const correctIndex = qq.ans;
+    const options = [...optionsEl.querySelectorAll('.option')];
+    const wrongs = options.filter(o => parseInt(o.dataset.index,10) !== correctIndex);
+    shuffle(wrongs);
+    // remove (disable/hide) two wrong options if available
+    let removed = 0;
+    for(const w of wrongs){
+      if(removed >= 2) break;
+      w.classList.add('disabled');
+      w.style.opacity = 0.46;
+      removed++;
+    }
+    state.lifelineUsed = true;
+    lifelineBtn.disabled = true;
+  });
+
+  // Restart
+  restartBtn.addEventListener('click', () => {
+    if(!confirm('Restart quiz? Your current progress will be lost.')) return;
+    init();
+    resultPanel.style.display = 'none';
+    reviewCard.style.display = 'none';
+    el('resultPanel').style.display = 'none';
+    confetti.innerHTML = '';
+  });
+
+  // Keyboard support
+  window.addEventListener('keydown', (e) => {
+    if(document.activeElement && document.activeElement.tagName === 'INPUT') return;
+    const key = e.key;
+    if(['1','2','3','4'].includes(key)){
+      const idx = parseInt(key,10)-1;
+      chooseOption(idx);
+    } else if(key === 'Enter'){
+      nextBtn.click();
+    }
+  });
+
+  // finish quiz
+  function finishQuiz(){
+    clearTimer();
+    // show results
+    resultPanel.style.display = 'block';
+    el('resultStats').innerHTML = `
+      <div class="muted">Score</div>
+      <div style="font-size:22px;font-weight:700;margin-top:6px">${state.score}</div>
+      <div style="margin-top:10px" class="muted">You answered ${state.answered} questions. Correct: ${state.correct}.</div>
+    `;
+    resultTitle.textContent = state.score >= (CONFIG.questionsToAsk * CONFIG.pointsPerQ * 0.7) ? 'Awesome! 🎉' : 'Nice attempt!';
+    // record highscore
+    const prevHS = parseInt(localStorage.getItem('qb_highscore') || '0',10);
+    if(state.score > prevHS){
+      localStorage.setItem('qb_highscore', String(state.score));
+      highScoreEl.textContent = state.score;
+      // show confetti
+      launchConfetti();
+    }
+    // show review list
+    showReview();
+    // prepare download button
+    el('downloadBtn').onclick = () => {
+      const data = { score: state.score, answered: state.answered, correct: state.correct, review: state.review, timestamp: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'quiz-results.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // show share
+    el('shareBtn').onclick = async () => {
+      const text = `I scored ${state.score} on Quiz Blitz — ${state.correct}/${state.questions.length} correct!`;
+      if(navigator.share){
+        try { await navigator.share({ title: 'Quiz Blitz Result', text }); }
+        catch(e){ alert('Share canceled'); }
+      } else {
+        prompt('Share your result (copy):', text);
+      }
+    };
+  }
+
+  function showReview(){
+    reviewCard.style.display = 'block';
+    reviewList.innerHTML = '';
+    state.review.forEach((r, idx) => {
+      const wrap = document.createElement('div');
+      wrap.style.padding = '10px'; wrap.style.borderBottom = '1px dashed rgba(255,255,255,0.03)';
+      const your = r.chosen === null ? '— skipped' : `You: ${r.opts[r.chosen]}`;
+      const corr = `Answer: ${r.opts[r.correct]}`;
+      wrap.innerHTML = `<div style="font-weight:700">${idx+1}. ${r.q}</div>
+                        <div class="muted" style="margin-top:6px">${your} • ${corr}</div>`;
+      reviewList.appendChild(wrap);
+    });
+  }
+
+  // view answers button
+  el('viewAnswers').addEventListener('click', () => {
+    window.scrollTo({top:0,behavior:'smooth'});
+    reviewCard.scrollIntoView({behavior:'smooth'});
+  });
+
+  // play again
+  playAgain.addEventListener('click', () => {
+    init();
+    resultPanel.style.display='none';
+    reviewCard.style.display='none';
+    confetti.innerHTML = '';
+  });
+
+  // confetti simple
+  function launchConfetti(){
+    confetti.innerHTML = '';
+    const colors = ['#ff7a88','#ffd36b','#7c3aed','#06b6d4','#34d399'];
+    for(let i=0;i<36;i++){
+      const s = document.createElement('span');
+      s.style.left = Math.random()*100 + '%';
+      s.style.top = (Math.random()*10 - 10) + 'vh';
+      s.style.background = colors[i % colors.length];
+      s.style.transform = 'translateY(-10vh) rotate('+ (Math.random()*360)+'deg)';
+      s.style.animationDelay = (Math.random()*600) + 'ms';
+      s.style.width = s.style.height = (6 + Math.random()*8) + 'px';
+      confetti.appendChild(s);
+    }
+    // stop confetti after some time
+    setTimeout(()=> confetti.innerHTML = '', 2200);
+  }
+
+  // init on load
+  init();
+
+  // Expose for debugging (optional)
+  window.QB = { state, init };
+
+})();
+</script>
+</body>
+</html>
